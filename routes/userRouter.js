@@ -7,11 +7,12 @@ const bcryptjs = require("bcryptjs");
 router.post("/user/register",(req,res)=>{
     const email =req.body.email;
     const username = req.body.username;
-    User.findOne({email:email,username:username})
+    User.findOne({$or:[{email:email},{username:username}]})
     .then((data)=>{
+        // console.log(data.username)
         if(data!=null){
-            res.json({success:true,msg:"Email or username already exists"});
-            return;
+                res.json({success:true,msg:"Email or username already exists"});
+                return;
         }
         const fullname = req.body.fullname;
         const username = req.body.username;
@@ -38,6 +39,10 @@ router.post("/user/register",(req,res)=>{
         
     })
     .catch()
+})
+
+router.post("/user/login",(req,res)=>{
+    const username=req.body.username;
 })
 
 module.exports = router;
