@@ -1,5 +1,6 @@
 const mongoose = require("mongoose");
-mongoose.connect("mongodb://127.0.0.1:27017/habit",{
-    useNewUrlParse : true,
+mongoose.set('strictQuery', true);
+mongoose.connect("mongodb://127.0.0.1:27017/HabitApp",{
+    useNewUrlParser : true,
     useUnifiedTopology : true
 })
