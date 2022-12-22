@@ -2,6 +2,7 @@ const express = require("express");
 const router = new express.Router();
 const User = require("../models/userModel");
 const bcryptjs = require("bcryptjs");
+const jwt = require("jsonwebtoken");
 
 
 router.post("/user/register",(req,res)=>{
@@ -43,6 +44,26 @@ router.post("/user/register",(req,res)=>{
 
 router.post("/user/login",(req,res)=>{
     const username=req.body.username;
+    const password=req.body.password;
+
+    User.findOne({username:username})
+    .then((data)=>{
+        if(data == null){
+            res.json({success:false, error:"Invalid Credential"})
+            return;
+        }
+        bcryptjs.compare(password,data.password,(e,result)=>{
+            if(result == false){
+                res.json({success:false,error:"Invalid Credentials"})
+                return;
+            }
+        const token = jwt.sign({userId:data._id},"token",{expiresIn:"1d"});
+            res.json({success:true,token:token})
+        })
+    })
+    .catch()
 })
+
+
 
 module.exports = router;
