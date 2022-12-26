@@ -3,6 +3,7 @@ const router = new express.Router();
 const User = require("../models/userModel");
 const bcryptjs = require("bcryptjs");
 const jwt = require("jsonwebtoken");
+const auth = require("../auth/auth");
 
 
 router.post("/user/register",(req,res)=>{
@@ -62,6 +63,112 @@ router.post("/user/login",(req,res)=>{
         })
     })
     .catch()
+})
+
+router.get("/user/show",(req,res)=>{
+    User.find()
+    .then((data)=>{
+        res.json({success:true,data:data})
+    })
+    .catch((e)=>{
+        res.json({success:false,error:e})
+    })
+})
+
+router.post("/user/friend/:uid/request",auth.userGuard,async(req,res)=>{
+    const friends_id=req.params.uid;
+    const user=req.user.id;
+    const status ="pending";
+    let a;
+    var b;
+    let c;
+    var d;
+
+    try{
+        a = await User.findOne({_id:friends_id})
+        c = await User.findOne({_id:user})
+    }
+    catch{
+        console.log("error")
+    }
+    if(a.friends.length > 0){
+        for(let i=0;i<a.friends.length;i++){
+            if(a.friends[i].account==user){
+                b = "exist"
+            }
+            else{
+                b="no"
+            }
+        }
+    }
+    
+    if(c.friends.length > 0){
+        for(let i=0;i<c.friends.length;i++){
+            if(c.friends[i].account==friends_id){
+                d = "exist"
+            }
+            else{
+                d="no"
+            }
+        }
+    }
+    
+    if(b == "no" || b == null ){
+        if(d =="no" || d == null){
+            User.findOneAndUpdate({_id:friends_id},
+                {
+                    $addToSet:{
+                        friends:[{
+                            account:user,
+                            status:status
+                        }]
+                    }
+                })
+            .then(()=>{
+                res.json({success:true,msg:"request sent"})
+            })
+            .catch((e)=>{
+                res.json({success:false,error:e})
+            })
+        }
+        else{
+            res.json({success:true,msg:"pending request"})
+        }
+    }
+    else{
+        res.json({success:true,msg:"already sent"})
+    }
+    
+})
+
+router.post("/user/friend/accept",auth.userGuard,(req,res)=>{
+    const user = req.user.id;
+    const accept_user = req.body.accept_user;
+    const status = "connected";
+    User.findOneAndUpdate({_id:accept_user},
+        {
+            $addToSet:{
+                friends:[{
+                    account:user,
+                    status:status
+                }]
+            }
+        })
+        .then()
+        .catch()
+    User.findOneAndUpdate({_id:user},
+        {
+            friends:[{
+                account:accept_user,
+                status:status
+            }]
+        })
+        .then(()=>{
+            res.json({success:true,msg:"accepted"})
+        })
+        .catch((e)=>{
+            res.json({success:false,error:e})
+        })
 })
 
 

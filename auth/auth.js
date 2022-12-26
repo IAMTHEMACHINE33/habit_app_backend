@@ -5,7 +5,6 @@ module.exports.userGuard=(req,res,next)=>{
     try {
         const token = req.headers.authorization.split(" ")[1];
         const data = jwt.verify(token, "token");
-        console.log(data);
         User.findOne({_id:data.userId})
         .then((user_data)=>{
             req.user = user_data;

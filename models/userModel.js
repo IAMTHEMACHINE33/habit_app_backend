@@ -15,7 +15,16 @@ const user = new mongoose.Schema({
     },
     email:{
         type:String,
-    }
+    },
+    friends:[{
+        account:{
+            type:mongoose.Schema.Types.ObjectId,
+            ref:"User",
+        },
+        status:{
+            type:String
+        }
+    }]
 });
 
 module.exports=mongoose.model('User',user);
