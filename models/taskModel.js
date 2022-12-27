@@ -5,9 +5,13 @@ const task = new mongoose.Schema({
         type:String,
     },
     proof:[{
-        image:{
+        daily_proof:{image:{
             type:String,
-        }
+        },
+        uploader:{
+            type:mongoose.Schema.Types.ObjectId,
+            ref:"User"
+        }}
     }],
     include_users:[{
         account:{

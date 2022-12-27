@@ -2,6 +2,7 @@ const express = require("express");
 const router = new express.Router();
 const Task = require("../models/taskModel");
 const auth = require("../auth/auth");
+const upload = require("../fileupload/fileupload")
 
 router.post("/task/add",auth.userGuard,(req,res)=>{
     const task_name = req.body.task_name;
@@ -38,20 +39,21 @@ router.post("/task/add_peer/:tid",auth.userGuard,async (req,res)=>{
     var b;
     try{
         a = await Task.findOne({_id:task})
+        if(a.include_users.length > 0){
+            for(let i=0;i<a.include_users.length;i++){
+                if(a.include_users[i].account == peer){
+                    b = "exist"
+                }
+                else{
+                    b = "no"
+                }
+            }
+        }
     }
     catch{
         console.log("error")
     }
-    if(a.include_users.length > 0){
-        for(let i=0;i<a.include_users.length;i++){
-            if(a.include_users[i].account == peer){
-                b = "exist"
-            }
-            else{
-                b = "no"
-            }
-        }
-    }
+    
     
     if(b == "no" || b == null){
         Task.findOneAndUpdate({_id:task},
@@ -71,6 +73,28 @@ router.post("/task/add_peer/:tid",auth.userGuard,async (req,res)=>{
         res.json({success:true,msg:"already added"})
     }
     
+})
+
+router.post("/task/:tid/proof",auth.userGuard, upload.single("proof_img"),(req,res)=>{
+    const task_id=req.params.tid;
+    const image=req.file.filename;
+    const uploader=req.user.id;
+    Task.findOneAndUpdate({_id:task_id},
+        {
+           $addToSet:{
+            proof:[{
+                daily_proof:{
+                    image:image,
+                    uploader:uploader}
+            }]
+           } 
+        })
+        .then(()=>{
+            res.json({success:true,msg:"proof uploaded"})
+        })
+        .catch((e)=>{
+            res.json({success:false,error:e})
+        })
 })
 
 module.exports = router;
