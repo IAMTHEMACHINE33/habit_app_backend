@@ -66,7 +66,12 @@ router.post("/user/login",(req,res)=>{
 })
 
 router.get("/user/show",(req,res)=>{
-    User.find()
+    User.find().populate({
+        path: "friends", 
+        populate: {
+           path: "account" 
+        }//asd
+     })
     .then((data)=>{
         res.json({success:true,data:data})
     })
