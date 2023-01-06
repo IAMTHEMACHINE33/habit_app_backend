@@ -8,9 +8,11 @@ const { ObjectId } = require("mongodb");
 
 router.post("/task/add",auth.userGuard,(req,res)=>{
     const task_name = req.body.task_name;
+    const penalty = req.body.penalty;
     const include_users = req.user.id;
     const data = new Task({
         task_name:task_name,
+        penalty:penalty,
         include_users:[{
             account:include_users
         }]
@@ -136,7 +138,7 @@ router.post("/task/:tid/proof",auth.userGuard, upload.single("proof_img"),async(
                         {
                             $addToSet: {
                               "proof.$[].daily_proof": {
-                                $each: [{ image: image, uploader: uploader ,accepted:"yes"}]
+                                $each: [{ image: image, uploader: uploader }]
                               }
                             }
                           },
@@ -168,63 +170,61 @@ router.post("/task/:tid/proof",auth.userGuard, upload.single("proof_img"),async(
 })
 
 router.put("/task/:tid/accept",auth.userGuard,async (req,res)=>{
-    const user = req.user.id;
-    const tid = req.params.tid;
-    const day_id = req.body.day_id;
+    const task_id=req.params.tid;
+    const uploader=req.user.id;
     var a;
+    var include_validator ="no";
+    var duplicate_validator="no";
+    var inside;
+    var outside;
     try{
-        a = await Task.findOne({_id:tid})
+        a = await Task.findOne({_id:task_id}) 
     }
     catch{
         console.log("error")
     }
-    if(a.proof.length != null){
-        for(let i=0;i<a.proof.length;i++){
-            
-            var b = a.proof[i]._id
-            var c = a.proof[i].daily_proof[0]._id
-            console.log(b)
-            console.log(c)
-            if(a.include_users[i].account._id == user){
-                
-                Task.findOneAndUpdate({_id:tid},
-                    {
-                            $set: {
-                              "proof.$[outerElement].daily_proof.$[innerElement].accepted": "Yes" 
-                            }     
-                    },
-                    {
-                        arrayFilters: [
-                          { "outerElement.id": b}, 
-                          { "innerElement.id": c} 
-                        ]
-                      })
-                        .then(()=>{
-                            res.json({success:true,msg:"Proof accepted"})
-                        })
-                        .catch((e)=>{
-                            res.json({succes:false,error:e})
-                        })
+    for(let b =0;b<a.include_users.length;b++){
+        if(a.include_users[b].account == uploader){
+            include_validator = "exists"
+        }
+    }
+    for(let o =0;o<a.proof.length;o++){
+        for(let c=0;c<a.proof[o].daily_proof.length;c++){
+            if(a.proof[o].daily_proof[c].uploader == uploader){
+                duplicate_validator="exists"
             }
         }
     }
+    for(let i =0;i<a.proof.length;i++){
+        for(let j = 0;j<a.proof[i].daily_proof.length;j++){
+            if(a.proof[i].daily_proof[j].uploader != uploader){
+                inside= a.proof[i].daily_proof[j]._id
+                outside=i;
+            }
+        }
+    }
+    if(inside != null && outside != null && include_users == "exists"){
+        Task.findOneAndUpdate({_id:task_id},
+            {
+                $set: {
+                  "proof.$[].daily_proof.$[inside].accepted": "Yes"
+                }
+              },
+              {
+                arrayFilters: [
+                  { "inside._id": inside }, 
+                ]
+              }
+            )
+            .then(()=>{
+                res.json({success:true,msg:"proof accepted"})
+            })
+            .catch((e)=>{
+                res.json({success:true,error:e})
+            }) 
+    }
     
-    // console.log(a.proof[0])
-    // res.json({msg:"asd"})
-    // Task.findOneAndUpdate({proof:{$elemMatch:{_id:day}}},
-    //     {
-    //         $addToSet:{proof:{
-    //             daily_proof:{
-    //                 accepted:"Yes"
-    //                },
-    //         }}
-    //     })
-    //     .then(()=>{
-    //         res.json({success:true,msg:"Proof accepted"})
-    //     })
-    //     .catch((e)=>{
-    //         res.json({succes:false,error:e})
-    //     })
+
 })
 
 
