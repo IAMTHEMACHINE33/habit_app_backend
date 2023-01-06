@@ -16,6 +16,9 @@ const user = new mongoose.Schema({
     email:{
         type:String,
     },
+    profile_pic:{
+        type:String,
+    },
     friends:[{
         account:{
             type:mongoose.Schema.Types.ObjectId,
