@@ -201,9 +201,9 @@ router.post("/user/friend/:uid/request",auth.userGuard,async(req,res)=>{
     
 })
 
-router.post("/user/friend/accept",auth.userGuard,(req,res)=>{
+router.post("/user/friend/accept/:aid",auth.userGuard,(req,res)=>{
     const user = req.user.id;
-    const accept_user = req.body.accept_user;
+    const accept_user = req.params.aid;
     const status = "connected";
     User.findOneAndUpdate({_id:accept_user},
         {
