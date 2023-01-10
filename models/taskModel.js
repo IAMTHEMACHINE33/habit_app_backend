@@ -8,6 +8,9 @@ const task = new mongoose.Schema({
     penalty:{
         type:String,
     },
+    streak:{
+        type:String,
+    },
     proof:[{
         daily_proof:[{
             image:{

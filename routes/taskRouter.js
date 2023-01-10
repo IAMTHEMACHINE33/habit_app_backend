@@ -160,7 +160,6 @@ router.post("/task/:tid/proof",auth.userGuard, upload.single("proof_img"),async(
             })
     }
     else if(date_validator != "exists" && include_validator == "exists"){
-        console.log("second")
         Task.findOneAndUpdate({_id:task_id},
             {
                 $addToSet:{
@@ -254,7 +253,7 @@ router.put("/task/:tid/accept",auth.userGuard,async (req,res)=>{
     var duplicate_validator="no";
     var inside;
     var outside;
-    var streak;
+    var streak = 0;
 
     try{
         a = await Task.findOne({_id:task_id}) 
@@ -299,19 +298,68 @@ router.put("/task/:tid/accept",auth.userGuard,async (req,res)=>{
                 Task.findOne({_id:task_id})
                 .then((data)=>{
                     var accepted=0;
-                    for(let n=0;n<data.proof[0].daily_proof.length;n++){
-                        console.log(data.proof[0].daily_proof[n].accepted )
-                        if(data.proof[0].daily_proof[n].accepted == "Yes"){
-                            accepted++;
+                    var final=0;
+                    var final1=0;
+                    const d1 =new Date();
+                    const today = d1.toISOString().slice(0, 10);
+                    var validator1 = "no";
+                    var validator2 = "no";
+
+                for(let n=data.proof.length;n>0;n--){
+                    // console.log(data.proof[n-1])
+                    if(data.proof[n-1].date_time.toISOString().slice(0, 10) != today){
+                        for(let m =0;m<data.proof[n-1].daily_proof.length;m++){   
+                            if(data.proof[n-1].daily_proof[m].accepted == "Yes"){
+                                accepted=accepted+1
+                            }
                         }
                     }
-                   
-                    if(data.proof.length == 1 && accepted == 2){
-                        streak = 1
+                    else{
+                        validator1="today"
                     }
-                    else if(data.proof.length > 1 ){
-
+                    if(n-1>0){
+                        // console.log(n-1)
+                        // console.log(n-2)
+                        // console.log(data.proof[n-1].date_time - data.proof[n-2].date_time)
+                        if(data.proof[n-1].date_time.toISOString().slice(0, 10) != today){
+                            if(data.proof[n-1].date_time - data.proof[n-2].date_time == 86400000){
+                                final1=final1+1;
+                            }
+                        }
+                        else{
+                            validator2="today"
+                        }
                     }
+                    // console.log(accepted)
+                    if(accepted==2){
+                        final=final+1;
+                    }
+                    else{
+                        accepted=0;
+                        break;
+                    }
+                    accepted=0;
+                }
+                // console.log(final+"asdasd")
+                // console.log(final1+"asdasd")
+                if(final<final1 && validator1!="today" && validator2!="today"){
+                    console.log(final)
+                    Task.findOneAndUpdate({_id:task_id},
+                        {
+                            streak:final
+                        })
+                        .then()
+                        .catch()
+                }
+                else if(final1<=final && validator1!="today" && validator2!="today"){
+                    // console.log(final1)
+                    Task.findOneAndUpdate({_id:task_id},    
+                        {
+                            streak:final1
+                        })
+                        .then()
+                        .catch()
+                }
 
                 })
                 .catch()
